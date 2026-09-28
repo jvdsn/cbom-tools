@@ -1090,6 +1090,8 @@ def main():
     metadata["timestamp"] = datetime.datetime.now().isoformat()
     metadata["lifecycles"] = [{"phase": "operations"}]
     metadata["properties"] = [{"name": "validation_id", "value": f"{validation_id}"}]
+    if args.certificate:
+        metadata["properties"].append({"name": "certificate", "value": f"{args.certificate}"})
     metadata["component"] = parse_implementation(validation["Implementation"])
     bom["metadata"] = metadata
 

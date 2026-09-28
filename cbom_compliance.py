@@ -6,7 +6,7 @@ import re
 CNSA1_0_MIN_MODULUS = 3072
 CNSA1_0_GROUPS = ("ffdhe3072", "ffdhe4096", "ffdhe6144", "ffdhe8192", "MODP-3072", "MODP-4096", "MODP-6144", "MODP-8192")
 
-ENISA2_0_AES_MODES = ("CTR", "OFB", "CBC", "CTS", "CFB1", "CFB64", "CFB128" "XTS", "CCM", "GCM", "EAX", "SIV", "KW", "KWP", "CMAC", "GMAC")
+ENISA2_0_AES_MODES = ("CTR", "OFB", "CBC", "CTS", "CFB1", "CFB8", "CFB128", "XTS", "CCM", "GCM", "EAX", "SIV", "KW", "KWP", "CMAC", "GMAC")
 ENISA2_0_MIN_MODULUS = 3000
 ENISA2_0_GROUPS = ("ffdhe3072", "ffdhe4096", "ffdhe6144", "ffdhe8192", "MODP-3072", "MODP-4096", "MODP-6144", "MODP-8192")
 ENISA2_0_CURVES = ("brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1", "P-256", "P-384", "P-521", "FRP256v1")
@@ -258,6 +258,67 @@ def check_enisa2_0(component, aes_bits, hashes):
     return check_enisa2_0_pqc(component, aes_bits, hashes)
 
 def check_enisa2_0_pqc(component, aes_bits, hashes):
+    name = component["name"]
+
+    if name.startswith("AES-"):
+        return check_aes(name, "AES", aes_bits, ENISA2_0_AES_MODES)
+
+    if name.startswith("ANSI-KDF-X9.63-"):
+        return check_hash(name, "ANSI-KDF-X9.63", hashes)
+
+    if name.startswith("CMAC-AES-"):
+        return check_aes(name, "CMAC-AES", aes_bits, ())
+
+    if name.startswith("CTR_DRBG-AES-"):
+        return check_aes(name, "CTR_DRBG-AES", aes_bits, ())
+
+    if name.startswith("Hash_DRBG-"):
+        return check_hash(name, "Hash_DRBG", hashes)
+
+    if name.startswith("HKDF-"):
+        return check_hash(name, "HKDF", hashes)
+
+    if name.startswith("HMAC-"):
+        return check_hash(name, "HMAC", hashes)
+
+    if name.startswith("HMAC_DRBG-"):
+        return check_hash(name, "HMAC_DRBG", hashes)
+
+    if name == "KMAC256" or name == "KMACXOF256":
+        return True, None
+
+    if name == "LMS" or name.startswith("LMS_"):
+        return True, None
+
+    if name.startswith("ML-DSA-"):
+        return name == "ML-DSA-65" or name == "ML-DSA-87", "ML-DSA must use ML-DSA-65 or ML-DSA-87"
+
+    if name.startswith("ML-KEM-"):
+        return name == "ML-KEM-768" or name == "ML-KEM-1024", "ML-KEM must use ML-KEM-768 or ML-KEM-1024"
+
+    if name.startswith("PBKDF2-"):
+        return check_hash(name, "PBKDF2", hashes)
+
+    for hash in hashes:
+        if name == hash:
+            return True, None
+
+    if name.startswith("SLH-DSA-"):
+        for parameter_set in ENISA2_0_SLH_DSA:
+            if name == parameter_set:
+                return True, None
+        return False, f"SLH-DSA must use a parameter set in {ENISA2_0_SLH_DSA}"
+
+    if name.startswith("SP800_56C_OneStep"):
+        return check_sp800_56c_onestep(name, hashes)
+
+    if name.startswith("SP800_56C_TwoStep_"):
+        return check_sp800_56c_twostep(name, aes_bits, hashes)
+
+    if name.startswith("XMSS-"):
+        return True, None
+
+    return False, f"{name} is not recommended"
 
 CHECKERS = {
     "cnsa1.0": ("CNSA 1.0",

@@ -1046,11 +1046,11 @@ def parse_implementation(j):
 
 def retrieve_validation_id(certificate):
     certificate = ["".join(g) for k, g in itertools.groupby(certificate, str.isalpha)]
-    source = certificate[0]
-    number = certificate[1]
-    if not source or not number:
+    if len(certificate) != 2:
         return 0
 
+    source = certificate[0]
+    number = certificate[1]
     response = requests.get(HTML_URL % (source, number))
     match = re.search(r"details\?validation=(\d+)", response.text)
     if match:
